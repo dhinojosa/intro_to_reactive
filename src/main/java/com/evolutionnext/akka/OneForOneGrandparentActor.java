@@ -22,11 +22,14 @@ public class OneForOneGrandparentActor extends UntypedActor {
                     @Override
                     public SupervisorStrategy.Directive apply(Throwable param)
                              throws Exception {
-                        if (param instanceof IllegalArgumentException)
+                        if (param instanceof
+                                IllegalArgumentException)
                             return SupervisorStrategy.restart();
-                        if (param instanceof ArithmeticException)
+                        if (param instanceof
+                                ArithmeticException)
                             return SupervisorStrategy.resume();
-                        if (param instanceof NullPointerException)
+                        if (param instanceof
+                                NullPointerException)
                             return SupervisorStrategy.stop();
                         else return SupervisorStrategy.escalate();
                     }

@@ -20,22 +20,25 @@ public class FuturesTest {
      */
 
     @Test
-    public void testJavaUtilConcurrentFutures() throws Exception {
+    public void testJavaUtilConcurrentFutures()
+            throws Exception {
         ExecutorService executorService =
                 Executors.newCachedThreadPool();
 
-        Callable<String> asynchronousTask
+        Callable<String> callable
                 = new Callable<String>() {
             @Override
             public String call() throws Exception {
-                //something expensive
+                System.out.println
+                        ("Inside future:" +
+                                Thread.currentThread().getName());
                 Thread.sleep(5000);
                 return "Asynchronous String Result";
             }
         };
 
         java.util.concurrent.Future<String> future =
-                executorService.submit(asynchronousTask);
+                executorService.submit(callable);
         System.out.println("Processing 1");
         System.out.println(future.get()); //waits if necessary
         System.out.println("Processing 2");

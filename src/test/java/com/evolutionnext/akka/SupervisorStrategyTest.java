@@ -46,7 +46,9 @@ public class SupervisorStrategyTest {
                     @Override
                     public void onComplete(Throwable failure, Object actorRef)
                             throws Throwable {
-                        ((ActorRef) actorRef).tell("IllegalArgumentException", null);
+                        ((ActorRef) actorRef)
+                                .tell("IllegalArgumentException",
+                                        null);
                     }
                 }, system.dispatcher()
         );

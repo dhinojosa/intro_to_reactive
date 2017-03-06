@@ -1,13 +1,14 @@
 package com.evolutionnext.rxjava;
 
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.Observer;
+import io.reactivex.annotations.NonNull;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Action;
+import io.reactivex.functions.Consumer;
 import org.junit.Test;
-import rx.Observable;
-import rx.Observable.OnSubscribe;
-import rx.Observer;
-import rx.Subscriber;
-import rx.functions.Action0;
-import rx.functions.Action1;
-import rx.observables.StringObservable;
 
 import java.time.LocalTime;
 
@@ -15,18 +16,18 @@ public class BasicObservableTest {
 
     @Test
     public void testManualObservableWithManualObserver() {
-        Observable<Integer> a = Observable.create(new OnSubscribe<Integer>() {
-            @Override
-            public void call(Subscriber<? super Integer> subscriber) {
-                subscriber.onNext(40);
-                subscriber.onNext(45);
-                subscriber.onCompleted();
-            }
-        });
+        Observable<Integer> a = Observable.create(
+                emitter -> {
+                    emitter.onNext(40);
+                    emitter.onNext(45);
+                    emitter.onComplete();
+                });
+
+        //-----------1001 lines code------------------
 
         a.subscribe(new Observer<Integer>() {
             @Override
-            public void onCompleted() {
+            public void onComplete() {
                 System.out.println("Completed");
             }
 
@@ -34,6 +35,11 @@ public class BasicObservableTest {
             public void onError(Throwable e) {
                 e.printStackTrace();
                 System.out.println();
+            }
+
+            @Override
+            public void onSubscribe(Disposable d) {
+
             }
 
             @Override
@@ -46,14 +52,14 @@ public class BasicObservableTest {
     @Test
     public void testManualObservableWithManualObserverSimplified() {
         Observable<Integer> a = Observable.create(s -> {
-                s.onNext(40);
-                s.onNext(45);
-                s.onCompleted();
-            }
+                    s.onNext(40);
+                    s.onNext(45);
+                    s.onComplete();
+                }
         );
         a.subscribe(new Observer<Integer>() {
             @Override
-            public void onCompleted() {
+            public void onComplete() {
                 System.out.println("Completed");
             }
 
@@ -61,6 +67,11 @@ public class BasicObservableTest {
             public void onError(Throwable e) {
                 e.printStackTrace();
                 System.out.println();
+            }
+
+            @Override
+            public void onSubscribe(Disposable d) {
+
             }
 
             @Override
@@ -72,42 +83,26 @@ public class BasicObservableTest {
 
     @Test
     public void testManualObservableWithExplicitActions() {
-        Observable<Integer> a = Observable.create(new OnSubscribe<Integer>() {
-            @Override
-            public void call(Subscriber<? super Integer> subscriber) {
-                subscriber.onNext(40);
-                subscriber.onNext(45);
-                subscriber.onCompleted();
-            }
-        });
-        a.subscribe(new Action1<Integer>() {
-            @Override
-            public void call(Integer integer) {
-                System.out.println("Received: " + integer);
-            }
-        }, new Action1<Throwable>() {
-            @Override
-            public void call(Throwable e) {
-                e.printStackTrace();
-                System.out.println();
-            }
-        }, new Action0() {
-            @Override
-            public void call() {
-                System.out.println("Completed");
-            }
-        });
+        Observable.create(source -> {
+            source.onNext(40);
+            source.onNext(45);
+            source.onComplete();
+        }).subscribe(new Consumer<Object>() {
+                         @Override
+                         public void accept(@NonNull Object x) throws Exception {
+                             System.out.println(x);
+                         }
+                     },
+                Throwable::printStackTrace,
+                () -> System.out.println("Completed"));
     }
 
     @Test
     public void testManualObservableWithLambdaActions() {
-        Observable<Integer> a = Observable.create(new OnSubscribe<Integer>() {
-            @Override
-            public void call(Subscriber<? super Integer> subscriber) {
-                subscriber.onNext(40);
-                subscriber.onNext(45);
-                subscriber.onCompleted();
-            }
+        Observable<Integer> a = Observable.create(subscriber -> {
+            subscriber.onNext(40);
+            subscriber.onNext(45);
+            subscriber.onComplete();
         });
         a.subscribe(
                 integer -> System.out.println("Received: " + integer),
@@ -123,26 +118,33 @@ public class BasicObservableTest {
         Observable<Integer> a = Observable.create(s -> {
                     s.onNext(40);
                     s.onNext(45);
-                    s.onCompleted();
+                    s.onComplete();
                 }
         );
-        a.subscribe(System.out::println, Throwable::printStackTrace,
+        a.subscribe(System.out::println,
+                Throwable::printStackTrace,
                 () -> System.out.println("Completed"));
     }
 
 
     @Test
     public void testBasic() throws InterruptedException {
-        Observable.just(40, 45).subscribe(System.out::println);
+        Observable.just(40, 45)
+                .subscribe(System.out::println,
+                        Throwable::printStackTrace,
+                        () -> System.out.println("Done, son"));
         Thread.sleep(2000);
     }
 
     @Test
     public void testUsingTwoObservablesBasedOneAnother() throws InterruptedException {
         Observable<Integer> a = Observable.just(50, 100, 122);
-        Observable<Integer> b = a.flatMap(x -> Observable.just(x-1, x, x+1));
+        Observable<Integer> b =
+                a.flatMap(x -> Observable.just(x - 1, x, x + 1));
+
         b.subscribe(System.out::println);
         Thread.sleep(2000);
+
         b.subscribe(System.out::println);
         Thread.sleep(2000);
     }
@@ -155,8 +157,8 @@ public class BasicObservableTest {
     @Test
     public void testDefer() throws InterruptedException {
         Observable<LocalTime> localTimeObservable =
-                Observable.defer(() -> Observable
-                        .just(LocalTime.now())).repeat(3);
+                Observable.just(LocalTime.now()).repeat(3);
+
         localTimeObservable.subscribe(System.out::println);
         Thread.sleep(3000);
         System.out.println("Next Subscriber");
@@ -166,22 +168,14 @@ public class BasicObservableTest {
     @Test
     public void testTicker() throws InterruptedException {
         String[] ticker = {"MSFT", "GOOG", "YHOO", "APPL"};
-        Observable<String> stringObservable = Observable.from(ticker);
-        TickerPriceFinder tickerPriceFinder = TickerPriceFinder.create();
-        stringObservable
-                .flatMap(s -> Observable.from(tickerPriceFinder.getPrice(s)))
+        Observable<String> tickerObservable =
+                Observable.fromArray(ticker);
+        TickerPriceFinder tickerPriceFinder =
+                TickerPriceFinder.create();
+        tickerObservable
+                .flatMap(s -> Observable.fromFuture(
+                        tickerPriceFinder.getPrice(s)))
                 .subscribe(System.out::println);
     }
 
-    @Test
-    public void testTickerToList() throws InterruptedException {
-        String[] ticker = {"MSFT", "GOOG", "YHOO", "APPL"};
-        Observable<String> stringObservable = Observable.from(ticker);
-        TickerPriceFinder tickerPriceFinder = TickerPriceFinder.create();
-        StringObservable.join(
-                stringObservable.flatMap(s ->
-                        Observable.from(tickerPriceFinder.getPrice(s))
-                ).map(d -> String.format("%.2f", d)), ",")
-                .subscribe(System.out::println, Throwable::printStackTrace);
-    }
 }

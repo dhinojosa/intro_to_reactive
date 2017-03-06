@@ -1,6 +1,7 @@
 package com.evolutionnext.rxjava;
 
 import java.util.Random;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -16,7 +17,13 @@ public class TickerPriceFinder {
     }
 
     public Future<Double> getPrice(String name) {
-        return executorService.submit(() -> random.nextDouble() * 200.0);
+
+        return executorService.submit(new Callable<Double>() {
+            @Override
+            public Double call() throws Exception {
+                return random.nextDouble() * 200.0;
+            }
+        });
     }
 
     public static TickerPriceFinder create() {

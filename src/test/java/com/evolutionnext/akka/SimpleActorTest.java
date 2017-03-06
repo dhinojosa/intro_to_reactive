@@ -23,7 +23,8 @@ public class SimpleActorTest {
         System.out.println(Thread.currentThread().getName());
         myActor.tell("Bueno!", system.deadLetters());
         Thread.sleep(10000);
-        Await.result(system.terminate(), Duration.apply(10, TimeUnit.SECONDS));
+        Await.result(system.terminate(),
+                Duration.apply(10, TimeUnit.SECONDS));
     }
 
     @Test
